@@ -23,7 +23,7 @@ FileOutput::~FileOutput() {
     }
 }
 
-void FileOutput::write(const std::vector<std::pair<std::shared_ptr<IMetric>, MetricValue>> &metric_values) {
+void FileOutput::write(const std::vector<std::pair<const IMetric*, MetricValue>> &metric_values) {
     if (!file_.is_open()) {
         return;
     }
@@ -51,7 +51,7 @@ void FileOutput::write(const std::vector<std::pair<std::shared_ptr<IMetric>, Met
 
 bool FileOutput::is_valid() const { return file_.is_open(); }
 
-void FileOutput::write_metric(const std::shared_ptr<IMetric> &metric, const MetricValue &value) {
+void FileOutput::write_metric(const IMetric* metric, const MetricValue &value) {
     file_ << "\n[" << metric->name() << "]\n";
 
     if (std::holds_alternative<std::vector<double>>(value)) {

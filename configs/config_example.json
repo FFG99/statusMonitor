@@ -1,0 +1,30 @@
+{
+    "settings": {
+        "period": 5
+    },
+    "metrics": [
+        {
+            "type": "cpu",
+            "library": "./cpu_metric.so",
+            "config": {
+                "cpu_ids": [0, 1, 2, 3]
+            }
+        },
+        {
+            "type": "memory",
+            "library": "./memory_metric.so",
+            "config": {
+                "spec": ["MemTotal", "MemFree", "MemAvailable"]
+            }
+        }
+    ],
+    "outputs": [
+        {
+            "type": "console"
+        },
+        {
+            "type": "file",
+            "path": "metrics.log"
+        }
+    ]
+}

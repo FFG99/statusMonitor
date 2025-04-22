@@ -23,27 +23,37 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(googletest json)
 
-set(SOURCES
+# Создаем shared library для каждой метрики
+add_library(cpu_metric SHARED
     src/metrics/CPUMetric.cpp
+)
+target_include_directories(cpu_metric PUBLIC include)
+target_link_libraries(cpu_metric PUBLIC nlohmann_json::nlohmann_json)
+set_target_properties(cpu_metric PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "cpu_metric"
+)
+
+add_library(memory_metric SHARED
     src/metrics/MemoryMetric.cpp
-    src/output/ConsoleOutput.cpp
-    src/output/FileOutput.cpp
+)
+target_include_directories(memory_metric PUBLIC include)
+target_link_libraries(memory_metric PUBLIC nlohmann_json::nlohmann_json)
+set_target_properties(memory_metric PROPERTIES
+    PREFIX ""
+    OUTPUT_NAME "memory_metric"
+)
+
+# Основное приложение
+add_executable(status_monitor 
     src/main.cpp
-)
-
-add_library(metrics STATIC 
-    src/metrics/CPUMetric.cpp
-    src/metrics/MemoryMetric.cpp
     src/output/ConsoleOutput.cpp
     src/output/FileOutput.cpp
 )
-target_include_directories(metrics PUBLIC include)
-target_link_libraries(metrics PUBLIC nlohmann_json::nlohmann_json)
-
-add_executable(status_monitor src/main.cpp)
+target_include_directories(status_monitor PUBLIC include)
 target_link_libraries(status_monitor
-    metrics
     nlohmann_json::nlohmann_json
+    dl
 )
 
 # Тесты для метрик
@@ -54,24 +64,28 @@ set(METRICS_TEST_SOURCES
 
 add_executable(metrics_test ${METRICS_TEST_SOURCES})
 target_link_libraries(metrics_test
-    metrics
+    cpu_metric
+    memory_metric
     GTest::gtest
     GTest::gtest_main
 )
 
 add_test(NAME metrics_test COMMAND metrics_test)
 
-# Тесты для выводов
+# Тесты для выходов
 set(OUTPUTS_TEST_SOURCES
     tests/output/ConsoleOutputTest.cpp
     tests/output/FileOutputTest.cpp
+    src/output/ConsoleOutput.cpp
+    src/output/FileOutput.cpp
 )
 
 add_executable(outputs_test ${OUTPUTS_TEST_SOURCES})
 target_link_libraries(outputs_test
-    metrics
+    cpu_metric
+    memory_metric
     GTest::gtest
     GTest::gtest_main
 )
 
-add_test(NAME outputs_test COMMAND outputs_test) 
+add_test(NAME outputs_test COMMAND outputs_test)

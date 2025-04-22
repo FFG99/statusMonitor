@@ -5,17 +5,26 @@
 #include <sstream>
 #include <stdexcept>
 #include <thread>
+#include <set>
 
-CPUMetric::CPUMetric(const json &config) {
+CPUMetric::CPUMetric(const json &config) : first_measurement_(true) {
     if (!config.contains("cpu_ids") || !config["cpu_ids"].is_array()) {
         throw std::invalid_argument("CPU metric requires 'cpu_ids' array");
     }
 
+    std::set<int> unique_ids;
     for (const auto &id : config["cpu_ids"]) {
         if (!id.is_number_integer()) {
             throw std::invalid_argument("CPU IDs must be integers");
         }
-        cpu_ids_.push_back(id.get<int>());
+        int cpu_id = id.get<int>();
+        if (cpu_id < 0) {
+            throw std::invalid_argument("CPU IDs must be non-negative");
+        }
+        if (!unique_ids.insert(cpu_id).second) {
+            throw std::invalid_argument("Duplicate CPU IDs are not allowed");
+        }
+        cpu_ids_.push_back(cpu_id);
     }
 
     if (cpu_ids_.empty()) {
@@ -24,19 +33,7 @@ CPUMetric::CPUMetric(const json &config) {
 }
 
 MetricValue CPUMetric::collect() const {
-    return collect_cpu_usage();
-}
-
-bool CPUMetric::is_valid() const {
-    return !cpu_ids_.empty();
-}
-
-std::string CPUMetric::name() const {
-    return "cpu";
-}
-
-std::vector<double> CPUMetric::collect_cpu_usage() const {
-    std::vector<double> usage;
+    std::vector<double> usage(cpu_ids_.size(), 0.0);  // Инициализируем вектор нулями
     std::map<int, CPUStats> current_stats;
 
     // Collect current values
@@ -80,14 +77,15 @@ std::vector<double> CPUMetric::collect_cpu_usage() const {
 
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
-        return collect_cpu_usage();
+        return collect();
     }
 
     // Вычисляем загруженность для каждого CPU
-    for (const auto &cpu_id : cpu_ids_) {
+    for (size_t i = 0; i < cpu_ids_.size(); ++i) {
+        int cpu_id = cpu_ids_[i];
         if (current_stats.find(cpu_id) == current_stats.end() ||
             prev_stats_.find(cpu_id) == prev_stats_.end()) {
-            continue;
+            continue;  // Оставляем 0.0 для несуществующего CPU
         }
 
         const CPUStats &current = current_stats[cpu_id];
@@ -97,21 +95,34 @@ std::vector<double> CPUMetric::collect_cpu_usage() const {
         unsigned long long total_diff = current.total_time() - prev.total_time();
 
         if (total_diff == 0) {
-            usage.push_back(0.0);
-            continue;
+            continue;  // Оставляем 0.0 для CPU без изменений
         }
 
         // Использование CPU в процентах
         double cpu_usage = 100.0 * (total_diff - idle_diff) / total_diff;
-        usage.push_back(cpu_usage);
+        usage[i] = cpu_usage;
     }
 
     // Сохраняем текущие значения для следующего измерения
     prev_stats_ = current_stats;
 
-    if (usage.empty()) {
-        throw std::runtime_error("Failed to collect CPU usage data");
-    }
-
     return usage;
+}
+
+bool CPUMetric::is_valid() const {
+    return !cpu_ids_.empty();
+}
+
+std::string CPUMetric::name() const {
+    return "cpu";
+}
+
+extern "C" {
+    IMetric* createMetric(const json& config) {
+        return new CPUMetric(config);
+    }
+    
+    void destroyMetric(IMetric* metric) {
+        delete metric;
+    }
 }
