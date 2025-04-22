@@ -21,3 +21,10 @@ public:
 
     virtual std::string name() const = 0;
 };
+
+// Экспортируемые функции для динамической загрузки
+extern "C" {
+    IMetric* createMetric(const json& config);
+    
+    void destroyMetric(IMetric* metric);
+}

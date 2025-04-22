@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <thread>
 
-CPUMetric::CPUMetric(const json &config) {
+CPUMetric::CPUMetric(const json &config) : first_measurement_(true) {
     if (!config.contains("cpu_ids") || !config["cpu_ids"].is_array()) {
         throw std::invalid_argument("CPU metric requires 'cpu_ids' array");
     }
@@ -114,4 +114,14 @@ std::vector<double> CPUMetric::collect_cpu_usage() const {
     }
 
     return usage;
+}
+
+extern "C" {
+    IMetric* createMetric(const json& config) {
+        return new CPUMetric(config);
+    }
+    
+    void destroyMetric(IMetric* metric) {
+        delete metric;
+    }
 }

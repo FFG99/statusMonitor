@@ -12,7 +12,7 @@ ConsoleOutput::ConsoleOutput(const json &config) {
 }
 
 void ConsoleOutput::write(
-    const std::vector<std::pair<std::shared_ptr<IMetric>, MetricValue>> &metric_values) {
+    const std::vector<std::pair<const IMetric*, MetricValue>> &metric_values) {
     std::system("clear");
     auto now = std::chrono::system_clock::now();
     auto time = std::chrono::system_clock::to_time_t(now);
@@ -41,7 +41,7 @@ bool ConsoleOutput::is_valid() const {
     return true; // Сейчас консольный вывод всегда валиден
 }
 
-void ConsoleOutput::print_metric(const std::shared_ptr<IMetric> &metric, const MetricValue &value) const {
+void ConsoleOutput::print_metric(const IMetric* metric, const MetricValue &value) const {
     std::cout << "[" << metric->name() << "]\n";
     std::cout << "-------------------------------------\n";
 

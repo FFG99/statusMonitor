@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 
 MemoryMetric::MemoryMetric(const json &config) {
     if (config.contains("spec") && config["spec"].is_array()) {
@@ -46,4 +47,14 @@ std::map<std::string, double> MemoryMetric::get_memory_info() const {
     }
 
     return memory_info;
+}
+
+extern "C" {
+    IMetric* createMetric(const json& config) {
+        return new MemoryMetric(config);
+    }
+    
+    void destroyMetric(IMetric* metric) {
+        delete metric;
+    }
 }
