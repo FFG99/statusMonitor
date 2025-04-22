@@ -67,3 +67,34 @@ TEST(CPUMetricTest, CollectMultipleCPUs) {
         }
     }
 }
+
+TEST(CPUMetricTest, InvalidConfigNegativeCPU) {
+    json config = {{"cpu_ids", {-1, 0, 1}}};
+    EXPECT_THROW(CPUMetric metric(config), std::invalid_argument);
+}
+
+TEST(CPUMetricTest, InvalidConfigDuplicateCPU) {
+    json config = {{"cpu_ids", {0, 0, 1}}};
+    EXPECT_THROW(CPUMetric metric(config), std::invalid_argument);
+}
+
+TEST(CPUMetricTest, InvalidConfigNonNumeric) {
+    json config = {{"cpu_ids", {0, "invalid", 1}}};
+    EXPECT_THROW(CPUMetric metric(config), std::invalid_argument);
+}
+
+TEST(CPUMetricTest, CollectWithInvalidCPU) {
+    json config = {{"cpu_ids", {999999}}}; // Предполагаем, что такого CPU не существует
+    CPUMetric metric(config);
+    ASSERT_TRUE(metric.is_valid());
+    
+    auto result = metric.collect();
+    bool is_vector = std::holds_alternative<std::vector<double>>(result);
+    EXPECT_TRUE(is_vector);
+    
+    if (is_vector) {
+        auto usage = std::get<std::vector<double>>(result);
+        EXPECT_EQ(usage.size(), 1);
+        EXPECT_EQ(usage[0], 0.0); // Ожидаем 0 для несуществующего CPU
+    }
+}
