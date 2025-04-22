@@ -13,5 +13,4 @@ public:
 
 private:
     std::vector<std::string> specs_;
-    std::map<std::string, double> get_memory_info() const;
 };

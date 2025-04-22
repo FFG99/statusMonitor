@@ -10,12 +10,14 @@ TEST(MemoryMetricTest, ValidConfig) {
 
 TEST(MemoryMetricTest, InvalidConfigMissingField) {
     json config = {{"wrong_field", {"MemTotal"}}};
-    EXPECT_THROW(MemoryMetric metric(config), std::invalid_argument);
+    MemoryMetric metric(config);
+    EXPECT_FALSE(metric.is_valid());
 }
 
 TEST(MemoryMetricTest, InvalidConfigEmptyArray) {
     json config = {{"spec", json::array()}};
-    EXPECT_THROW(MemoryMetric metric(config), std::invalid_argument);
+    MemoryMetric metric(config);
+    EXPECT_FALSE(metric.is_valid());
 }
 
 TEST(MemoryMetricTest, Name) {
@@ -59,12 +61,14 @@ TEST(MemoryMetricTest, InvalidMetricNames) {
 
 TEST(MemoryMetricTest, EmptyMetricNames) {
     json config = {{"spec", {""}}};
-    EXPECT_THROW(MemoryMetric metric(config), std::invalid_argument);
+    MemoryMetric metric(config);
+    EXPECT_FALSE(metric.is_valid());
 }
 
 TEST(MemoryMetricTest, DuplicateMetricNames) {
     json config = {{"spec", {"MemTotal", "MemTotal"}}};
-    EXPECT_THROW(MemoryMetric metric(config), std::invalid_argument);
+    MemoryMetric metric(config);
+    EXPECT_FALSE(metric.is_valid());
 }
 
 TEST(MemoryMetricTest, MemoryValuesRange) {

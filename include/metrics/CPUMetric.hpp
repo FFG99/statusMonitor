@@ -12,8 +12,6 @@ public:
     bool is_valid() const override;
     std::string name() const override;
 
-    std::vector<double> collect_cpu_usage() const;
-
 private:
     std::vector<int> cpu_ids_;
 
